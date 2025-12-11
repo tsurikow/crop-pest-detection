@@ -1,0 +1,130 @@
+# ============================
+# OS / Editor junk
+# ============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================
+# VSCode
+# ============================
+.vscode/
+*.code-workspace
+
+# VSCode local history / cache
+.history/
+.vscode-test/
+
+# ============================
+# PyCharm (JetBrains IDEs)
+# ============================
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# JetBrains caches
+.jetbrains/
+out/
+
+# ============================
+# Python / uv
+# ============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+.venv/
+.uv/
+.venv*/
+.env
+.env.*
+.python-version
+
+# PyInstaller
+*.spec
+
+# Coverage / Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+
+# ============================
+# Jupyter
+# ============================
+.ipynb_checkpoints/
+
+# ============================
+# Project data (not for Git)
+# ============================
+data/
+datasets/
+raw_data/
+processed_data/
+tmp/
+temp/
+cache/
+logs/
+outputs/
+
+# ============================
+# Model artifacts
+# ============================
+checkpoints/
+models/
+model_weights/
+*.pt
+*.pth
+*.onnx
+*.ckpt
+
+# ============================
+# MLflow / MinIO / Experiments
+# ============================
+mlruns/
+mlartifacts/
+tensorboard/
+events.out.tfevents.*
+
+# ============================
+# DVC
+# ============================
+.dvc/tmp/
+.dvc/cache/
+.dvc/lock
+
+# ============================
+# Triton model repository
+# ============================
+model_repository/*/1/
+model_repository/*/2/
+model_repository/*/3/
+
+# If configs stored — DO NOT ignore config.pbtxt
+# model_repository/*/config.pbtxt
+
+# ============================
+# Docker / Build system
+# ============================
+*.log
+docker/*.log
+docker/tmp/
+docker_build/
+dist/
+build/
+
+# ============================
+# Misc
+# ============================
+*.swp
+*.swo
+*.bak
+*.orig
+*.tmp
+*.temp

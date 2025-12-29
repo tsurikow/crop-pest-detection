@@ -1,0 +1,38 @@
+# configs/train.yaml
+defaults:
+  - _self_
+
+seed: 42
+
+paths:
+  data_root: raw_data/agro_pest
+
+data:
+  num_classes: 12
+  batch_size: 2
+  num_workers: 0
+  pin_memory: false
+
+model:
+  num_classes: 13
+  pretrained: true
+
+optim:
+  lr: 1e-4
+  weight_decay: 1e-4
+
+trainer:
+  max_epochs: 1
+  accelerator: cpu
+  devices: 1
+  precision: 32
+  log_every_n_steps: 1
+  limit_train_batches: 5
+  limit_val_batches: 2
+  num_sanity_val_steps: 0
+
+logging:
+  use_mlflow: true
+  tracking_uri: "http://localhost:8080"
+  experiment_name: "crop-pest-detection"
+  run_name: "smoke"

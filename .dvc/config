@@ -1,0 +1,7 @@
+[core]
+    remote = agro_http
+['remote "agro_s3"']
+    url = s3://agro-pest
+    endpointurl = https://storage.yandexcloud.net
+['remote "agro_http"']
+    url = https://storage.yandexcloud.net/agro-pest

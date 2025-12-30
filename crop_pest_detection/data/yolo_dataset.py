@@ -10,11 +10,11 @@ from torch.utils.data import Dataset
 import torchvision.transforms.functional as F
 
 
-
 @dataclass(frozen=True)
 class YoloDatasetPaths:
     images_dir: Path
     labels_dir: Path
+
 
 def _pil_to_tensor(image: Image.Image) -> torch.Tensor:
     """PIL RGB -> float32 tensor [C,H,W] in [0,1]."""
@@ -73,14 +73,18 @@ class YoloPestDetectionDataset(Dataset):
     def __len__(self) -> int:
         return len(self.image_paths)
 
-    def _read_yolo_labels(self, label_path: Path, width: int, height: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _read_yolo_labels(
+        self, label_path: Path, width: int, height: int
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         boxes: List[List[float]] = []
         labels: List[int] = []
 
         if not label_path.exists():
             if self.strict:
                 raise RuntimeError(f"Missing label file: {label_path}")
-            return torch.zeros((0, 4), dtype=torch.float32), torch.zeros((0,), dtype=torch.int64)
+            return torch.zeros((0, 4), dtype=torch.float32), torch.zeros(
+                (0,), dtype=torch.int64
+            )
 
         with label_path.open("r") as f:
             for ln, line in enumerate(f, start=1):
@@ -90,12 +94,14 @@ class YoloPestDetectionDataset(Dataset):
                 parts = line.split()
                 if len(parts) != 5:
                     if self.strict:
-                        raise RuntimeError(f"Bad label line (len!=5) in {label_path}:{ln}: {line}")
+                        raise RuntimeError(
+                            f"Bad label line (len!=5) in {label_path}:{ln}: {line}"
+                        )
                     continue
 
                 class_id = int(parts[0])
                 if not (0 <= class_id < self.num_classes):
-                    msg = f"class_id out of range [0,{self.num_classes-1}] in {label_path}:{ln}: {class_id}"
+                    msg = f"class_id out of range [0,{self.num_classes - 1}] in {label_path}:{ln}: {class_id}"
                     if self.strict:
                         raise RuntimeError(msg)
                     continue
@@ -119,9 +125,13 @@ class YoloPestDetectionDataset(Dataset):
                 boxes.append([x_min, y_min, x_max, y_max])
 
         if boxes:
-            return torch.tensor(boxes, dtype=torch.float32), torch.tensor(labels, dtype=torch.int64)
+            return torch.tensor(boxes, dtype=torch.float32), torch.tensor(
+                labels, dtype=torch.int64
+            )
 
-        return torch.zeros((0, 4), dtype=torch.float32), torch.zeros((0,), dtype=torch.int64)
+        return torch.zeros((0, 4), dtype=torch.float32), torch.zeros(
+            (0,), dtype=torch.int64
+        )
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, Dict[str, Any]]:
         img_path = self.image_paths[idx]
@@ -139,7 +149,11 @@ class YoloPestDetectionDataset(Dataset):
         }
 
         if self.transforms is not None:
-            out = self.transforms(image_pil, target) if callable(self.transforms) else self.transforms(image_pil)
+            out = (
+                self.transforms(image_pil, target)
+                if callable(self.transforms)
+                else self.transforms(image_pil)
+            )
             if isinstance(out, tuple) and len(out) == 2:
                 image_pil, target = out
             else:
@@ -154,7 +168,7 @@ class YoloPestDetectionDataset(Dataset):
 
 
 def detection_collate_fn(
-    batch: List[Tuple[torch.Tensor, Dict[str, Any]]]
+    batch: List[Tuple[torch.Tensor, Dict[str, Any]]],
 ) -> Tuple[List[torch.Tensor], List[Dict[str, Any]]]:
     images, targets = list(zip(*batch))
     return list(images), list(targets)

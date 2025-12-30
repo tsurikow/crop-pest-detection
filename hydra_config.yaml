@@ -1,28 +1,66 @@
 seed: 42
 paths:
   data_root: raw_data/agro_pest
+  outputs_dir: outputs
+  checkpoints_dir: checkpoints
+  exports_dir: exports
 data:
   num_classes: 12
-  batch_size: 2
-  num_workers: 0
-  pin_memory: false
+  image_size:
+  - 640
+  - 640
+  batch_size: 8
+  num_workers: 8
+  pin_memory: true
+  train_split: train
+  val_split: valid
+  test_split: test
+  augment:
+    enabled: true
+    hflip_p: 0.5
+    vflip_p: 0.0
 model:
+  name: fasterrcnn_resnet50_fpn
   num_classes: 13
   pretrained: true
-optim:
-  lr: 0.0001
-  weight_decay: 0.0001
-trainer:
-  max_epochs: 1
-  accelerator: cpu
-  devices: 1
-  precision: 32
-  log_every_n_steps: 1
-  limit_train_batches: 50
-  limit_val_batches: 20
-  num_sanity_val_steps: 0
-logging:
-  use_mlflow: true
-  tracking_uri: http://localhost:8080
-  experiment_name: crop-pest-detection
-  run_name: smoke
+train:
+  trainer:
+    max_epochs: 3
+    accelerator: gpu
+    devices: 1
+    precision: 16-mixed
+    log_every_n_steps: 50
+    limit_train_batches: 1.0
+    limit_val_batches: 1.0
+    num_sanity_val_steps: 0
+    deterministic: false
+    benchmark: true
+    gradient_clip_val: 0.0
+    accumulate_grad_batches: 1
+  optim:
+    lr: 0.0001
+    weight_decay: 0.0001
+    scheduler:
+      enabled: false
+      name: cosine
+      t_max: 25
+      step_size: 10
+      gamma: 0.1
+  logging:
+    use_mlflow: true
+    tracking_uri: ${oc.env:MLFLOW_TRACKING_URI,http://localhost:8080}
+    experiment_name: crop-pest-detection
+    run_name: null
+    tags:
+      stage: train
+  export:
+    enabled: true
+    export_on: best
+    opset: 17
+    input_h: 640
+    input_w: 640
+    max_dets: 100
+    score_thr: 0.001
+    artifact_path: onnx/model.onnx
+    filename: model.onnx
+    log_ckpt_artifacts: true

@@ -1,43 +1,54 @@
 from __future__ import annotations
 
 import torch
+from torch import nn
 
-class TritonDetectorWrapper(torch.nn.Module):
-    def __init__(self, detector: torch.nn.Module, max_dets: int = 100, score_thr: float = 0.05):
+
+class TritonDetectorWrapper(nn.Module):
+    def __init__(
+        self, detector: nn.Module, max_dets: int = 100, score_thr: float = 0.05
+    ):
         super().__init__()
         self.detector = detector
-        self.max_dets = max_dets
-        self.score_thr = score_thr
+        self.max_dets = int(max_dets)
+        self.score_thr = float(score_thr)
 
-    def forward(self, images: torch.Tensor):
-        preds = self.detector([images])
-        p = preds[0]
+    def forward(self, image: torch.Tensor):
+        out = self.detector([image])[0]
+        boxes = out["boxes"]
+        scores = out["scores"]
+        labels = out["labels"]
 
-        boxes = p["boxes"]
-        scores = p["scores"]
-        labels = p["labels"].to(torch.int64)
+        if self.score_thr > 0.0:
+            keep = scores >= self.score_thr
+            boxes = boxes[keep]
+            scores = scores[keep]
+            labels = labels[keep]
 
-        keep = scores >= self.score_thr
-        boxes = boxes[keep]
-        scores = scores[keep]
-        labels = labels[keep]
+        if torch.numel(scores) > 0:
+            order = torch.argsort(scores, descending=True)
+            order = order[: self.max_dets]
+            boxes = boxes.index_select(0, order)
+            scores = scores.index_select(0, order)
+            labels = labels.index_select(0, order)
 
-        n = boxes.shape[0]
-        num = torch.zeros((1,), dtype=torch.int64)
-        num[0] = n
+        num = torch._shape_as_tensor(scores)[0:1]
 
-        max_dets_t = torch.tensor(self.max_dets, dtype=torch.int64)
-        n_t = torch.tensor(n, dtype=torch.int64)
-        k_t = torch.minimum(n_t, max_dets_t)
-        k = int(k_t.item())
+        boxes_out = torch.zeros(
+            (self.max_dets, 4), dtype=boxes.dtype, device=boxes.device
+        )
+        scores_out = torch.zeros(
+            (self.max_dets,), dtype=scores.dtype, device=scores.device
+        )
+        labels_out = torch.zeros(
+            (self.max_dets,), dtype=torch.int64, device=labels.device
+        )
 
-        boxes_out = torch.zeros((self.max_dets, 4), dtype=boxes.dtype)
-        scores_out = torch.zeros((self.max_dets,), dtype=scores.dtype)
-        labels_out = torch.zeros((self.max_dets,), dtype=torch.int64)
+        n = torch._shape_as_tensor(scores)[0]
+        idx = torch.arange(n, dtype=torch.int64, device=scores.device)
 
-        if k > 0:
-            boxes_out[:k] = boxes[:k]
-            scores_out[:k] = scores[:k]
-            labels_out[:k] = labels[:k]
+        boxes_out = boxes_out.index_copy(0, idx, boxes)
+        scores_out = scores_out.index_copy(0, idx, scores)
+        labels_out = labels_out.index_copy(0, idx, labels.to(torch.int64))
 
         return boxes_out, scores_out, labels_out, num

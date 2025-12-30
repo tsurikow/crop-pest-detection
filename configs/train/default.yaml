@@ -1,0 +1,43 @@
+trainer:
+  max_epochs: 25
+  accelerator: auto
+  devices: 1
+  precision: 16-mixed
+  log_every_n_steps: 50
+  limit_train_batches: 1.0
+  limit_val_batches: 1.0
+  num_sanity_val_steps: 0
+  deterministic: false
+  benchmark: true
+  gradient_clip_val: 0.0
+  accumulate_grad_batches: 1
+
+optim:
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+  scheduler:
+    enabled: false
+    name: cosine  # cosine | step
+    t_max: 25
+    step_size: 10
+    gamma: 0.1
+
+logging:
+  use_mlflow: true
+  tracking_uri: ${oc.env:MLFLOW_TRACKING_URI,http://localhost:8080}
+  experiment_name: crop-pest-detection
+  run_name: null
+  tags:
+    stage: train
+
+export:
+  enabled: true
+  export_on: best  # best | last
+  opset: 17
+  input_h: 640
+  input_w: 640
+  max_dets: 100
+  score_thr: 0.001
+  artifact_path: onnx/model.onnx
+  filename: model.onnx
+  log_ckpt_artifacts: true

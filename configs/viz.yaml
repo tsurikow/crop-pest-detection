@@ -1,0 +1,4 @@
+defaults:
+  - paths: default
+  - viz: default
+  - _self_

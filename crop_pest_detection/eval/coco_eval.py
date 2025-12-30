@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -37,7 +37,11 @@ def coco_map_from_predictions(
     ann_id = 1
 
     for p, t in zip(preds, targets):
-        image_id = int(t["image_id"].item()) if torch.is_tensor(t["image_id"]) else int(t["image_id"])
+        image_id = (
+            int(t["image_id"].item())
+            if torch.is_tensor(t["image_id"])
+            else int(t["image_id"])
+        )
         width = None
         height = None
         if "image_size" in t:

@@ -1,0 +1,7 @@
+# @package viz
+
+input_json: outputs/infer/result.json
+output_path: outputs/infer/result.png
+score_thr: 0.50
+box_format: xyxy
+yolo_data_yaml: raw_data/agro_pest/data.yaml

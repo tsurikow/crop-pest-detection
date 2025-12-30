@@ -8,6 +8,7 @@ import torch
 from .detector import build_fasterrcnn_resnet50_fpn
 from crop_pest_detection.eval.coco_eval import coco_map_from_predictions
 
+
 class PestDetectorLitModule(pl.LightningModule):
     def __init__(
         self,
@@ -19,7 +20,9 @@ class PestDetectorLitModule(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
-        self.model = build_fasterrcnn_resnet50_fpn(num_classes=num_classes, pretrained=pretrained)
+        self.model = build_fasterrcnn_resnet50_fpn(
+            num_classes=num_classes, pretrained=pretrained
+        )
         self.lr = lr
         self.weight_decay = weight_decay
         self._val_preds = []
@@ -39,7 +42,14 @@ class PestDetectorLitModule(pl.LightningModule):
         loss = sum(loss_dict.values())
 
         bs = len(images)
-        self.log("train/loss", loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=bs)
+        self.log(
+            "train/loss",
+            loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=bs,
+        )
         for k, v in loss_dict.items():
             self.log(f"train/{k}", v, on_step=True, on_epoch=True, batch_size=bs)
 
@@ -60,7 +70,12 @@ class PestDetectorLitModule(pl.LightningModule):
                 passed += int((p["scores"] >= thr).sum())
 
         bs = len(images)
-        self.log("val/top_score_mean", float(sum(top_scores) / max(1, len(top_scores))), on_epoch=True, batch_size=bs)
+        self.log(
+            "val/top_score_mean",
+            float(sum(top_scores) / max(1, len(top_scores))),
+            on_epoch=True,
+            batch_size=bs,
+        )
         self.log("val/dets_ge_0_5", float(passed), on_epoch=True, batch_size=bs)
 
         preds_cpu = []
@@ -79,7 +94,9 @@ class PestDetectorLitModule(pl.LightningModule):
                 {
                     "boxes": t["boxes"].detach().cpu(),
                     "labels": t["labels"].detach().cpu(),
-                    "image_id": t["image_id"].detach().cpu() if hasattr(t["image_id"], "detach") else t["image_id"],
+                    "image_id": t["image_id"].detach().cpu()
+                    if hasattr(t["image_id"], "detach")
+                    else t["image_id"],
                     "image_size": (int(img.shape[-2]), int(img.shape[-1])),
                 }
             )
@@ -88,17 +105,25 @@ class PestDetectorLitModule(pl.LightningModule):
         self._val_targets.extend(targets_cpu)
 
         num_det = sum(len(p["boxes"]) for p in preds_cpu)
-        self.log("val/num_detections", float(num_det), on_epoch=True, prog_bar=True, batch_size=bs)
+        self.log(
+            "val/num_detections",
+            float(num_det),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=bs,
+        )
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        optimizer = torch.optim.AdamW(
+            self.parameters(), lr=self.lr, weight_decay=self.weight_decay
+        )
         return optimizer
 
     def on_validation_epoch_end(self) -> None:
         metrics = coco_map_from_predictions(
             preds=self._val_preds,
             targets=self._val_targets,
-            num_classes=self.hparams.num_classes - 1,  # у нас num_classes=13 (включая фон)
+            num_classes=self.hparams.num_classes - 1,
         )
         self.log("val/mAP", metrics["mAP"], prog_bar=True)
         self.log("val/mAP50", metrics["mAP50"], prog_bar=True)

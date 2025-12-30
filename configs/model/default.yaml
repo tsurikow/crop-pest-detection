@@ -1,0 +1,3 @@
+name: fasterrcnn_resnet50_fpn
+num_classes: 13
+pretrained: true

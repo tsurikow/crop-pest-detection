@@ -1,7 +1,7 @@
 [project]
 name = "crop-pest-detection"
 version = "0.1.0"
-description = "Add your description here"
+description = "Crop pest detection full pipeline with Triton inference and visualization."
 requires-python = ">=3.12"
 dependencies = [
     "dvc>=3.64.2",

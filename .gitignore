@@ -41,7 +41,6 @@ __pycache__/
 .uv/
 .venv*/
 .env
-.env.*
 .python-version
 
 # PyInstaller

@@ -13,7 +13,7 @@ mlflow:
 
 download_dir: downloads/mlflow
 
-input_path: raw_data/agro_pest/valid/images/0000000001.jpg
+input_path: raw_data/agro_pest/valid/images/ants-8-_jpg.rf.d164ba1daadd8148414cdc98438576a1.jpg
 output_path: outputs/infer/result.json
 
 export:
@@ -29,6 +29,9 @@ triton:
   model_name: crop_pest_detector
   model_version: 1
   max_batch_size: 0
+  instance_kind: KIND_GPU
+  instance_count: 1
+  labels_dtype: TYPE_INT64
 
 post:
   score_thr: 0.30

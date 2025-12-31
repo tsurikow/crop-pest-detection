@@ -101,6 +101,7 @@ services:
   triton:
     image: nvcr.io/nvidia/tritonserver:25.12-py3
     container_name: triton-server
+    profiles: ["gpu"]
     command: >
       tritonserver
       --model-repository=/models
@@ -120,6 +121,23 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+
+  triton-cpu:
+    image: nvcr.io/nvidia/tritonserver:25.12-py3
+    container_name: triton-server-cpu
+    profiles: ["cpu"]
+    command: >
+      tritonserver
+      --model-repository=/models
+      --http-port=8000
+      --grpc-port=8001
+      --metrics-port=8002
+    volumes:
+      - ./model_repository:/models:ro
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
 
 networks:
   default:

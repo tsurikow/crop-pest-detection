@@ -31,6 +31,10 @@ def run_triton_build_repo(cfg: DictConfig) -> Path:
     input_w = int(cfg.infer.export.input_w)
     max_dets = int(cfg.infer.export.max_dets)
 
+    labels_dtype = str(cfg.infer.triton.get("labels_dtype", "TYPE_INT64"))
+    instance_kind = str(cfg.infer.triton.get("instance_kind", "KIND_GPU"))
+    instance_count = int(cfg.infer.triton.get("instance_count", 1))
+
     model_dir = model_repo / model_name
     version_dir = model_dir / model_version
     version_dir.mkdir(parents=True, exist_ok=True)
@@ -46,9 +50,9 @@ def run_triton_build_repo(cfg: DictConfig) -> Path:
         input_h=input_h,
         input_w=input_w,
         max_dets=max_dets,
-        labels_dtype="TYPE_INT64",
-        instance_kind="KIND_GPU",
-        instance_count=1,
+        labels_dtype=labels_dtype,
+        instance_kind=instance_kind,
+        instance_count=instance_count,
     )
 
     return model_repo

@@ -1,0 +1,6 @@
+outs:
+- md5: 62edefae529ca3d623e2058ab915eec1.dir
+  size: 563481796
+  nfiles: 26287
+  hash: md5
+  path: agro_pest

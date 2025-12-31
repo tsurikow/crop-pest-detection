@@ -1,0 +1,8 @@
+defaults:
+  - paths: default
+  - data: default
+  - model: default
+  - train: default
+  - infer: default
+
+seed: 42

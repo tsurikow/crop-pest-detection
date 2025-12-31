@@ -1,0 +1,40 @@
+backend: onnxruntime # onnxruntime | triton_http
+
+source: local # local | mlflow_ckpt | mlflow_onnx
+
+ckpt_path: checkpoints/last.ckpt
+onnx_path: exports/onnx/model.onnx
+
+mlflow:
+  tracking_uri: ${oc.env:MLFLOW_TRACKING_URI,http://localhost:8080}
+  run_id: ""
+  ckpt_artifact_path: checkpoints/last.ckpt
+  onnx_artifact_path: onnx/model.onnx
+
+download_dir: downloads/mlflow
+
+input_path: raw_data/agro_pest/valid/images/ants-8-_jpg.rf.d164ba1daadd8148414cdc98438576a1.jpg
+output_path: outputs/infer/result.json
+
+export:
+  opset: 17
+  input_h: 640
+  input_w: 640
+  max_dets: 100
+  score_thr: 0.001
+
+triton:
+  url: localhost:8000
+  model_repository: model_repository
+  model_name: crop_pest_detector
+  model_version: 1
+  max_batch_size: 0
+  instance_kind: KIND_GPU
+  instance_count: 1
+  labels_dtype: TYPE_INT64
+
+post:
+  score_thr: 0.30
+  nms_iou_thr: 0.50
+  top_k: 20
+  per_class_nms: true

@@ -1,0 +1,6 @@
+defaults:
+  - paths: default
+  - data: default
+  - model: default
+  - infer: default
+  - _self_

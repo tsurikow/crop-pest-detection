@@ -1,0 +1,144 @@
+volumes:
+  pgdata:
+  minio-data:
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: mlflow-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mlflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlflow}
+      POSTGRES_DB: ${POSTGRES_DB:-mlflow}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mlflow} -d ${POSTGRES_DB:-mlflow}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    container_name: mlflow-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio12345}
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  create-bucket:
+    image: minio/mc:latest
+    container_name: mlflow-create-bucket
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio12345}
+      MINIO_BUCKET: ${MINIO_BUCKET:-mlflow}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set myminio "http://minio:9000" "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing "myminio/${MINIO_BUCKET}"
+    restart: "no"
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:${MLFLOW_VERSION:-v3.8.1}
+    container_name: mlflow-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      create-bucket:
+        condition: service_completed_successfully
+    environment:
+      MLFLOW_BACKEND_STORE_URI: ${MLFLOW_BACKEND_STORE_URI:-postgresql+psycopg2://mlflow:mlflow@postgres:5432/mlflow}
+
+      MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL:-http://minio:9000}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minio12345}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      MLFLOW_S3_IGNORE_TLS: "true"
+
+      MLFLOW_HOST: ${MLFLOW_HOST:-0.0.0.0}
+      MLFLOW_PORT: ${MLFLOW_PORT:-8080}
+      MLFLOW_ARTIFACTS_DESTINATION: ${MLFLOW_ARTIFACTS_DESTINATION:-s3://mlflow/}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        pip install --no-cache-dir psycopg2-binary boto3
+        mlflow server \
+          --backend-store-uri "${MLFLOW_BACKEND_STORE_URI}" \
+          --artifacts-destination "${MLFLOW_ARTIFACTS_DESTINATION}" \
+          --host "${MLFLOW_HOST}" \
+          --port "${MLFLOW_PORT}"
+    ports:
+      - "${MLFLOW_PORT:-8080}:${MLFLOW_PORT:-8080}"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${MLFLOW_PORT:-8080}/health').read()\" >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  triton:
+    image: nvcr.io/nvidia/tritonserver:25.12-py3
+    container_name: triton-server
+    profiles: ["gpu"]
+    command: >
+      tritonserver
+      --model-repository=/models
+      --http-port=8000
+      --grpc-port=8001
+      --metrics-port=8002
+    volumes:
+      - ./model_repository:/models:ro
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  triton-cpu:
+    image: nvcr.io/nvidia/tritonserver:25.12-py3
+    container_name: triton-server-cpu
+    profiles: ["cpu"]
+    command: >
+      tritonserver
+      --model-repository=/models
+      --http-port=8000
+      --grpc-port=8001
+      --metrics-port=8002
+    volumes:
+      - ./model_repository:/models:ro
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+
+networks:
+  default:
+    name: mlflow-network

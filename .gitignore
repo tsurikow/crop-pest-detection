@@ -31,6 +31,7 @@ out/
 # Python / uv
 # ============================
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
@@ -40,7 +41,6 @@ __pycache__/
 .uv/
 .venv*/
 .env
-.env.*
 .python-version
 
 # PyInstaller
@@ -63,22 +63,28 @@ htmlcov/
 # ============================
 # Project data (not for Git)
 # ============================
-data/
-datasets/
-raw_data/
-processed_data/
+/data/*
+!/data/*.dvc
+/raw_data/*
+!/raw_data/*.dvc
+/processed_data/*
+!/processed_data/*.dvc
 tmp/
 temp/
 cache/
 logs/
-outputs/
+/outputs/
+/outputs/*
 
 # ============================
 # Model artifacts
 # ============================
 checkpoints/
-models/
+/models/
 model_weights/
+lightning_logs/
+exports/
+downloads/
 *.pt
 *.pth
 *.onnx
@@ -102,12 +108,8 @@ events.out.tfevents.*
 # ============================
 # Triton model repository
 # ============================
-model_repository/*/1/
-model_repository/*/2/
-model_repository/*/3/
-
-# If configs stored — DO NOT ignore config.pbtxt
-# model_repository/*/config.pbtxt
+model_repository/**
+!model_repository/**/config.pbtxt
 
 # ============================
 # Docker / Build system
@@ -128,3 +130,8 @@ build/
 *.orig
 *.tmp
 *.temp
+
+
+# setuptools / packaging metadata
+*.egg-info/
+.eggs/

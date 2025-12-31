@@ -1,0 +1,4 @@
+data_root: raw_data/agro_pest
+outputs_dir: outputs
+checkpoints_dir: checkpoints
+exports_dir: exports
